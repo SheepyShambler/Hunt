@@ -266,7 +266,7 @@ public abstract class Utils {
 		}
 
 		if (pokemon != null) {
-			newMessage = newMessage.replaceAll("\\{pokemon\\}", pokemon.getDisplayName().getString());
+			newMessage = newMessage.replaceAll("\\{pokemon\\}", pokemon.getDisplayName(true).getString());
 		}
 
 		if (price != -1) {
