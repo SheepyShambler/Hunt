@@ -6,12 +6,18 @@ package org.pokesplash.hunt.config;
 public class CustomPrice {
 	private String species; // Species of the pokemon
 	private String form; // Form of the pokemon
-	private double price; // price of hunt.
+	private RewardConfig reward; // price of hunt.
 
 	public CustomPrice() {
 		species = "magikarp";
 		form = "";
-		price = 500;
+		reward = new RewardConfig(500, "give {player} minecraft:diamond 1");
+	}
+
+	public CustomPrice(String species, String form, double price) {
+		this.species = species;
+		this.form = form;
+		reward = new RewardConfig(price, null);
 	}
 
 	/**
@@ -26,7 +32,7 @@ public class CustomPrice {
 		return form;
 	}
 
-	public double getPrice() {
-		return price;
+	public RewardConfig getReward() {
+		return reward;
 	}
 }

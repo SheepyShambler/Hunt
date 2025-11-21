@@ -13,10 +13,11 @@ dependencies {
     }
     api("net.kyori:adventure-api:${rootProject.kyori_version}")
 
+    implementation fileTree(dir: 'libs', includes: ['*.jar'])
 }
 
 architectury {
-    common("fabric", "forge")
+    common("fabric", "neoforge")
 }
 
 publishing {

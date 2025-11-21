@@ -6,13 +6,11 @@ import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.pokesplash.hunt.Hunt;
-import org.pokesplash.hunt.hunts.SingleHunt;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,12 +26,12 @@ import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Abstract class that contains some utility methods.
@@ -268,7 +266,7 @@ public abstract class Utils {
 		}
 
 		if (pokemon != null) {
-			newMessage = newMessage.replaceAll("\\{pokemon\\}", pokemon.getDisplayName().getString());
+			newMessage = newMessage.replaceAll("\\{pokemon\\}", pokemon.getDisplayName(true).getString());
 		}
 
 		if (price != -1) {
@@ -283,29 +281,7 @@ public abstract class Utils {
 		CompoundTag tag = new CompoundTag();
 		tag.putString("id", id);
 		tag.putInt("Count", 1);
-		return ItemStack.of(tag);
-	}
-
-	public static void removeAllHunts() {
-
-		if (Hunt.config.isIndividualHunts()) {
-			for (UUID player : Hunt.manager.getPlayers()) {
-				ArrayList<SingleHunt> copy =
-						(ArrayList<SingleHunt>) new ArrayList<>(Hunt.manager.getPlayerHunts(player).getHunts().values()).clone();
-				for (SingleHunt hunt : copy) {
-					if (hunt != null) {
-						hunt.getTimer().cancel();
-					}
-				}
-			}
-		} else {
-			ArrayList<SingleHunt> copy = (ArrayList<SingleHunt>) new ArrayList<>(Hunt.hunts.getHunts().values()).clone();
-			for (SingleHunt hunt : copy) {
-				if (hunt != null) {
-					hunt.getTimer().cancel();
-				}
-			}
-		}
+		return ItemStack.parse(HolderLookup.Provider.create(Stream.empty()), tag).get();
 	}
 
 	public static void runCommands(ArrayList<String> commands, ServerPlayer player, Pokemon pokemon, double price) {
