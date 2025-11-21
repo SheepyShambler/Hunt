@@ -3,13 +3,9 @@ package org.pokesplash.hunt.hunts;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import org.pokesplash.hunt.Hunt;
 import org.pokesplash.hunt.config.CustomPrice;
-import org.pokesplash.hunt.config.RewardConfig;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class SingleHunt {
 
@@ -18,8 +14,9 @@ public class SingleHunt {
 	private double price; // hunt prize amount.
 	private ArrayList<String> commands; // Commands for completing the hunt.
 	private Pokemon pokemon; // Pokemon being hunted.
+	private final Timer timer; // Timer for hunt.
 	private final long endtime; // The end date for the hunt.
-	private Bucket bucket; // The spawn bucket of the Pokemon.
+//	private final String nature;
 
 	public SingleHunt(UUID owner) {
 		// Creates unique ID and generates random pokemon.
@@ -28,20 +25,18 @@ public class SingleHunt {
 
 		pokemon = new Pokemon();
 
-		Bucket rarityRequired = Hunt.config.getRarity().getRandomRarity();
-		bucket = Hunt.spawnRates.getBucket(pokemon);
+		float rarity = Hunt.spawnRates.getRarity(pokemon);
+
 		boolean isLegendary = pokemon.isLegendary();
 
 		// Will keep regenerating a Pokemon until one found in the rarity table that isn't a legendary is found.
-		while (bucket == null || isLegendary || !bucket.equals(rarityRequired)) {
+		while (rarity == -1 || isLegendary) {
 			pokemon = new Pokemon();
-			bucket = Hunt.spawnRates.getBucket(pokemon);
+			rarity = Hunt.spawnRates.getRarity(pokemon);
 			isLegendary = pokemon.isLegendary();
 		}
 
-		RewardConfig reward = Hunt.config.getRewards().get(bucket);
-		price = reward.getPrice();
-		commands = reward.getCommands();
+		boolean hasCustom = false;
 
 		// Checks for a custom price.
 		List<CustomPrice> customPrices = Hunt.config.getCustomPrices();
@@ -51,45 +46,54 @@ public class SingleHunt {
 				// If no form is given or the form matches, use price.
 				if (item.getForm().trim().equalsIgnoreCase("") ||
 						item.getForm().trim().equalsIgnoreCase(pokemon.getForm().getName().trim())) {
-					price = item.getReward().getPrice();
-					commands = item.getReward().getCommands();
+					hasCustom = true;
+					price = item.getPrice();
 					break;
 				}
 			}
 		}
 
+		// If a custom price is found, don't run this.
+		if (!hasCustom) {
+			// Sets the price based on the rarity.
+			if (rarity >= Hunt.config.getRarity().getCommonPokemonRarity()) {
+				price = Hunt.config.getRewards().getCommon().getPrice();
+				commands = Hunt.config.getRewards().getCommon().getCommands();
+			} else if (rarity >= Hunt.config.getRarity().getUncommonPokemonRarity()) {
+				price = Hunt.config.getRewards().getUncommon().getPrice();
+				commands = Hunt.config.getRewards().getUncommon().getCommands();
+			} else if (rarity >= Hunt.config.getRarity().getRarePokemonRarity()) {
+				price = Hunt.config.getRewards().getRare().getPrice();
+				commands = Hunt.config.getRewards().getRare().getCommands();
+			} else {
+				price = Hunt.config.getRewards().getUltraRare().getPrice();
+				commands = Hunt.config.getRewards().getUltraRare().getCommands();
+			}
+		}
 		pokemon.rollAbility();
 		pokemon.checkGender();
 
 		// Creates the timer to replace the hunt once it is over.
 		int duration = Hunt.config.getHuntDuration() * 60 * 1000;
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (Hunt.config.isIndividualHunts()) {
+					Hunt.manager.getPlayerHunts(owner).replaceHunt(id, true);
+				} else {
+					Hunt.hunts.replaceHunt(id, true);
+				}
+			}
+		}, duration);
 
 		// Adds the endtime as the current time + the duration.
 		endtime = new Date().getTime() + duration;
 	}
 
 	/**
-	 * Checks that the hunt is still valid.
-	 */
-	public void check() {
-
-		if (endtime > new Date().getTime()) {
-			return;
-		}
-
-		if (Hunt.config.isIndividualHunts()) {
-			Hunt.manager.getPlayerHunts(owner).replaceHunt(id, true);
-		} else {
-			Hunt.hunts.replaceHunt(id, true);
-		}
-	}
-
-	/**
 	 * Getters
 	 */
-	public UUID getOwner() {
-		return owner;
-	}
 
 	public UUID getId() {
 		return id;
@@ -108,16 +112,15 @@ public class SingleHunt {
 		return pokemon;
 	}
 
+	public Timer getTimer() {
+		return timer;
+	}
 	public long getEndtime() {
 		return endtime;
 	}
 
 	public ArrayList<String> getCommands() {
 		return commands;
-	}
-
-	public Bucket getBucket() {
-		return bucket;
 	}
 
 	/**

@@ -58,6 +58,14 @@ public abstract class BaseCommand {
 	private void createCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
 		LiteralCommandNode<CommandSourceStack> root = Commands
 				.literal(commandString)
+				.requires(ctx -> {
+					if (ctx.isPlayer()) {
+						return Hunt.permissions.hasPermission(ctx.getPlayer(),
+								permission);
+					} else {
+						return true;
+					}
+				})
 				.executes(this::run)
 				.build();
 

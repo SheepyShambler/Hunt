@@ -2,8 +2,6 @@ package org.pokesplash.hunt.config;
 
 import com.google.gson.Gson;
 import org.pokesplash.hunt.Hunt;
-import org.pokesplash.hunt.enumeration.Economy;
-import org.pokesplash.hunt.old.ConfigOld;
 import org.pokesplash.hunt.util.Utils;
 
 import java.util.ArrayList;
@@ -12,10 +10,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Config file.
  */
-public class Config extends Versioned {
-	private Economy economy; // The economy mod to use. Options are Impactor, Pebbles, Blanket.
-	private boolean useImpactorDefaultCurrency; // Should Hunt use Impactor's default currency.
-	private String currencyName; // The name of the currency that should be used.
+public class Config {
+	private String version; // The version of the config.
 	private boolean individualHunts; // if hunts should be individual for each player.
 	private boolean sendHuntEndMessage; // Should the mod send a message when a hunt ends.
 	private boolean sendHuntBeginMessage; // Should the mod send a message when a hunt begins.
@@ -30,10 +26,7 @@ public class Config extends Versioned {
 	private ArrayList<String> blacklist; // List if Pokemon that shouldn't be added to Hunt.
 
 	public Config() {
-		super(Hunt.CONFIG_VERSION);
-		economy = Economy.IMPACTOR;
-		useImpactorDefaultCurrency = true;
-		currencyName = "impactor:huntcoins";
+		version = Hunt.CONFIG_VERSION;
 		individualHunts = false;
 		sendHuntEndMessage = true;
 		sendHuntBeginMessage = true;
@@ -56,17 +49,19 @@ public class Config extends Versioned {
 		CompletableFuture<Boolean> futureRead = Utils.readFileAsync("/config/hunt/", "config.json",
 				el -> {
 					Gson gson = Utils.newGson();
-					Versioned versioned = gson.fromJson(el, Versioned.class);
-
 					Config cfg = gson.fromJson(el, Config.class);
+
+					if (!cfg.getVersion().equals(Hunt.CONFIG_VERSION)) {
+						//TODO Fix versions (Future)
+					}
+
+
 					if (cfg.getHuntAmount() > 28) {
 						huntAmount = 28;
 						Hunt.LOGGER.error("Hunt amount can not be higher than 28");
 					} else {
 						huntAmount = cfg.getHuntAmount();
 					}
-					useImpactorDefaultCurrency = cfg.isUseImpactorDefaultCurrency();
-					currencyName = cfg.getCurrencyName();
 					huntDuration = cfg.getHuntDuration();
 					individualHunts = cfg.isIndividualHunts();
 					sendHuntEndMessage = cfg.isSendHuntEndMessage();
@@ -78,25 +73,18 @@ public class Config extends Versioned {
 					blacklist = cfg.getBlacklist();
 					rarity = cfg.getRarity();
 					rewards = cfg.getRewards();
-					economy = cfg.getEconomy();
-
-					if (!versioned.getVersion().equals(Hunt.CONFIG_VERSION)) {
-						ConfigOld cfgOld = gson.fromJson(el, ConfigOld.class);
-						economy = Economy.IMPACTOR;
-						currencyName = cfgOld.getImpactorCurrencyName();
-						write();
-					}
-
-
 				});
 
 		// If the config couldn't be read, write a new one.
 		if (!futureRead.join()) {
 			Hunt.LOGGER.info("No config.json file found for Hunt. Attempting to generate one.");
-			boolean futureWrite = write();
+			Gson gson = Utils.newGson();
+			String data = gson.toJson(this);
+			CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync("/config/hunt/", "config.json",
+					data);
 
 			// If the write failed, log fatal.
-			if (!futureWrite) {
+			if (!futureWrite.join()) {
 				Hunt.LOGGER.fatal("Could not write config for Hunt.");
 			}
 			return;
@@ -104,14 +92,15 @@ public class Config extends Versioned {
 		Hunt.LOGGER.info("Hunt config file read successfully.");
 	}
 
-	private boolean write() {
-		Gson gson = Utils.newGson();
-		String data = gson.toJson(this);
-		CompletableFuture<Boolean> futureWrite = Utils.writeFileAsync("/config/hunt/", "config.json",
-				data);
-		return futureWrite.join();
-	}
 
+
+
+	/**
+	 * Bunch of Getters
+	 */
+	public String getVersion() {
+		return version;
+	}
 
 	public int getBufferDuration() {
 		return bufferDuration;
@@ -167,17 +156,5 @@ public class Config extends Versioned {
 			if (name.equalsIgnoreCase(pokemon)) return true;
 		}
 		return false;
-	}
-
-	public boolean isUseImpactorDefaultCurrency() {
-		return useImpactorDefaultCurrency;
-	}
-
-	public String getCurrencyName() {
-		return currencyName;
-	}
-
-	public Economy getEconomy() {
-		return economy;
 	}
 }

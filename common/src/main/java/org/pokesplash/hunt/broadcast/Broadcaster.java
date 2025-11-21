@@ -7,10 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.pokesplash.hunt.Hunt;
 import org.pokesplash.hunt.util.Utils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Class used to handle the broadcasts to the server.

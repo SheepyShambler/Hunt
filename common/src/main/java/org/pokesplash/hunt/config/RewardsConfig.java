@@ -1,7 +1,5 @@
 package org.pokesplash.hunt.config;
 
-import org.pokesplash.hunt.hunts.Bucket;
-
 /**
  * Stores all rewards.
  */
@@ -32,14 +30,5 @@ public class RewardsConfig {
 
 	public RewardConfig getUltraRare() {
 		return ultraRare;
-	}
-
-	public RewardConfig get(Bucket bucket) {
-		return switch (bucket) {
-			case COMMON -> getCommon();
-			case UNCOMMON -> getUncommon();
-			case RARE -> getRare();
-			case ULTRA_RARE -> getUltraRare();
-		};
 	}
 }

@@ -2,11 +2,12 @@ package org.pokesplash.hunt.hunts;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.pokesplash.hunt.Hunt;
 import org.pokesplash.hunt.broadcast.BroadcastType;
+import org.pokesplash.hunt.util.Utils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -103,6 +104,7 @@ public class CurrentHunts {
 		SingleHunt removedHunt = hunts.remove(id);
 		if (removedHunt != null) {
 			species.remove(id);
+			removedHunt.getTimer().cancel(); // Cancel timer on hunt.
 
 			// If broadcasts are enabled and the method call wants it broadcast, send it.
 			if (Hunt.config.isIndividualHunts()) {
@@ -172,9 +174,5 @@ public class CurrentHunts {
 	 */
 	public HashMap<UUID, SingleHunt> getHunts() {
 		return hunts;
-	}
-
-	public ArrayList<SingleHunt> getHuntValues() {
-        return new ArrayList<>(hunts.values());
 	}
 }
